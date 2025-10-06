@@ -140,12 +140,4 @@ php artisan db:seed --class=AdminUserSeeder
 
 ---
 
-## 📄 Licenc
 
-Ez a projekt szabadon bővíthető, tanulási és fejlesztési célokra használható.
-
----
-
-**Készítette:**  
-Zsolt Varga  
-Laravel 12 + Sanctum Senior API fejlesztő
