@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\MeController;
+use App\Http\Controllers\Api\DatingProfileController;
 
 Route::prefix('v1')->group(function () {
 
@@ -17,5 +18,11 @@ Route::prefix('v1')->group(function () {
         Route::put('/auth/tokens/{id}', [TokenController::class, 'update'])->name('api.v1.auth.tokens.update');
 
         Route::delete('/auth/token', [TokenController::class, 'destroy'])->name('api.v1.auth.token.destroy');
+     
+        Route::apiResource('dating-profiles', DatingProfileController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+    
+    
+    
+    
     });
 });

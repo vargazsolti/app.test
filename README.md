@@ -1,164 +1,151 @@
-# 🧱 Laravel 12 Sanctum SPA API Starter
 
-This repository is a **Laravel 12** backend API boilerplate featuring **Laravel Sanctum** token-based authentication, a ready-to-use **User seeder**, and an included **Postman collection** for rapid testing and development.
+# 💘 Laravel 12 + Sanctum Dating API & Blade UI
 
----
+Ez a projekt egy **Laravel 12 + Sanctum** alapú társkereső alkalmazás backend és frontend kombinációja,  
+amely JSON API-n és Blade alapú Lightwave UI-n keresztül működik.
 
-## 🚀 Features
+## 🚀 Fő funkciók
 
-- ✅ Clean **Laravel 12** base install  
-- ✅ **Sanctum** token authentication (SPA / API ready)  
-- ✅ Default `User` model, factory & seeder  
-- ✅ Pre-seeded test user  
-- ✅ Consistent JSON API responses  
-- ✅ Included **Postman v2.1 collection** for quick testing  
+### 🔐 Autentikáció
+- **Laravel Sanctum** token alapú hitelesítés.
+- `POST /api/v1/auth/token` – Bejelentkezés és Bearer token generálás.
+- `DELETE /api/v1/auth/token` – Kijelentkezés (token érvénytelenítés).
+- `GET /api/v1/me` – Saját profil lekérdezése.
 
----
+### ❤️ Társkereső profilok (CRUD)
+- `GET /api/v1/dating-profiles` – Profilok listázása (szűrés ország, város szerint).
+- `POST /api/v1/dating-profiles` – Profil létrehozása (egy felhasználónak csak egy lehet).
+- `GET /api/v1/dating-profiles/{id}` – Profil megtekintése.
+- `PUT /api/v1/dating-profiles/{id}` – Profil frissítése.
+- `DELETE /api/v1/dating-profiles/{id}` – Profil törlése.
 
-## 🔗 API Endpoints
+### 🧑‍💼 Admin jogosultságok
+- Az `users` táblában található `is_admin` mező alapján.
+- Az admin más felhasználók profilját is létrehozhatja, frissítheti, törölheti.
+- Admin felhasználó seeder: `AdminUserSeeder` (`admin@example.com / password`).
 
-| Method | Endpoint | Description |
-|--------|-----------|-------------|
-| `POST` | `/api/v1/auth/token` | Login – creates a new personal access token |
-| `DELETE` | `/api/v1/auth/token` | Logout – revokes the current token |
-| `GET` | `/api/v1/me` | Retrieve the authenticated user's profile |
-| `GET` | `/api/v1/auth/tokens` | List the user's active tokens |
-| `GET` | `/api/v1/auth/tokens/{id}` | Get details of a specific token |
-| `PUT` | `/api/v1/auth/tokens/{id}` | Update a token name |
+### 🧠 Adatszerkezet
+A társkereső profil adatai segédtáblában (`dating_profiles`) tárolódnak,  
+a `users` tábla csak a bejelentkezéshez szükséges adatokat tartalmazza.
 
----
+Fő mezők:
+- Becenév, magasság, testsúly, testalkat, hajszín
+- Szexuális beállítottság, családi állapot, végzettség
+- Foglalkozás, beszélt nyelvek, ország, megye, város
+- Regisztráció célja
 
-## 🧩 Installation Guide
+### 🗃️ Seeder & Factory
+- Minden entitás rendelkezik factory-val és seederrel.
+- A seeder truncate-olja a táblákat, majd 10 mintaprofil generálódik.
 
-### 1️⃣ Clone the repository
-```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
-```
-
-### 2️⃣ Install dependencies
-```bash
-composer install
-```
-
-### 3️⃣ Environment setup
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-
-Then update your `.env` file with your local database credentials:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=app_sanctum
-DB_USERNAME=root
-DB_PASSWORD=
-```
-
----
-
-## ⚙️ Database Migration & Seed
-
-Run the following commands:
-
-```bash
-php artisan migrate --seed
-```
-
-This will create a default **test user**:
-
-| Field | Value |
-|--------|--------|
-| Email | `test@example.com` |
-| Password | `password` |
-
----
-
-## 🔐 Authentication (Sanctum)
-
-Laravel Sanctum is already configured for **SPA and API token authentication**.
-
-After successful login via:
-```
-POST /api/v1/auth/token
-```
-you will receive a token in the response.  
-Use it for subsequent authenticated requests by setting the header:
-
-```
-Authorization: Bearer <your_token_here>
-```
-
-All protected routes use the `auth:sanctum` middleware.
-
----
-
-## 📬 Postman Collection
-
-A complete **Postman Collection** (`Sanctum SPA API v1.postman_collection.json`) is included.
-
-### 🧱 Structure
-- **Collection Variables**
-  - `base_url` → your API root (e.g., `http://app-sanctum.test`)
-  - `token` → automatically set after login
-- **Automatic Token Handling**
-  - The login request runs a test script that saves the received token into the collection variables.
-- **Inherited Auth**
-  - All requests inherit the Bearer token from the collection-level auth.
-
-### 🧪 Usage Steps
-1. Import the `.postman_collection.json` file into Postman.  
-2. Set `base_url` to your local or deployed API (without trailing slash).  
-3. Run the **Login** request to authenticate and automatically save your token.  
-4. Test all other endpoints using the saved token.
-
----
-
-## 📦 Example JSON Response
-
+### 🧩 JSON válaszstruktúra
+Minden API egységes formátumban ad vissza adatot:
 ```json
 {
   "success": true,
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "Test User",
-      "email": "test@example.com"
-    }
-  },
-  "message": "Login successful."
+  "data": { ... },
+  "message": "Human readable üzenet."
 }
 ```
 
 ---
 
-## 🧰 Useful Artisan Commands
+## 🧭 Blade alapú Lightwave UI
 
-| Purpose | Command |
-|----------|----------|
-| Serve locally | `php artisan serve` |
-| Clear cache | `php artisan optimize:clear` |
-| List routes | `php artisan route:list` |
-| Run migrations | `php artisan migrate` |
-| Seed users | `php artisan db:seed --class=UserSeeder` |
+A projekt tartalmaz egy **minimalista Blade UI-t**, amely közvetlenül a Sanctum API-t hívja JavaScriptből.
+
+### 🔑 Auth oldalak
+- `/auth/login` → Bejelentkezés (`POST /api/v1/auth/token`)
+- `/me` → Saját profil oldal (`GET /api/v1/me`)
+- Logout gomb → `DELETE /api/v1/auth/token`
+
+### 💌 Dating Profiles UI
+- `/profiles` → Profil lista (`GET /api/v1/dating-profiles`)
+- `/profiles/{id}` → Profil adatlap (`GET /api/v1/dating-profiles/{id}`)
+- `/profiles/{id}/edit` → Profil szerkesztés (`PUT /api/v1/dating-profiles/{id}`)
+- Automatikus token kezelés `localStorage` segítségével.
+
+### ⚙️ Technológia
+- Blade template engine (Laravel 12)
+- Vanilla JavaScript + fetch API
+- Lightwave layout (minimalista stílus)
+- Tailwind nélkül, könnyű és gyors UI
 
 ---
 
-## 🧠 Notes
+## 💾 Telepítés
 
-- Sanctum middleware setup included.  
-- Works seamlessly with **WAMP/XAMPP** or `php artisan serve`.  
-- Perfect base for building SPA backends using **Vue**, **React**, or **Inertia**.  
-- Clean and consistent API response structure for all endpoints.
+```bash
+git clone https://github.com/vargazsolti/app-sanctum.test.git
+cd app-sanctum.test
+composer install
+cp .env.example .env
+php artisan key:generate
+
+# Adatbázis beállítás az .env-ben, majd migrációk futtatása
+php artisan migrate --seed
+
+# Admin user létrehozás
+php artisan db:seed --class=AdminUserSeeder
+
+# Fejlesztői szerver indítása
+php artisan serve
+```
+
+Alapértelmezett elérési út:
+```
+http://localhost:8000/auth/login
+```
 
 ---
 
-## 🧑‍💻 Contributing & License
+## 🧪 Postman Collection
 
-This project is open-source and free to use under the **MIT License**.  
-Feel free to **fork**, **modify**, and **build** your own Laravel-based projects on top of it.
+A projekt tartalmaz egy teljes Postman gyűjteményt:
 
-> Built with ❤️ using Laravel 12 and Sanctum.
+- **DatingProfiles_updated.postman_collection.json**  
+  Minden CRUD endpoint előre kitöltve  
+  Bearer token örökléssel (`{{token}}`), `{{base_url}}` környezeti változóval.
+
+Importáld a Postman-be, állítsd be a változókat:
+```
+base_url = http://localhost/
+token = <a saját Sanctum tokened>
+```
+
+---
+
+## 🧰 Hasznos parancsok
+
+```bash
+# Cache törlés
+php artisan optimize:clear
+
+# Factory újra generálás
+php artisan db:seed --class=DatingProfileSeeder
+
+# Admin újra seedelés
+php artisan db:seed --class=AdminUserSeeder
+```
+
+---
+
+## 📚 Fejlesztői információk
+
+- Laravel 12 + PHP 8.2
+- Sanctum middleware minden privát API endpointon
+- PSR-12 kódstílus
+- JSON alapú API + Blade front kombináció
+- Könnyen integrálható Vue/Inertia frontendre
+
+---
+
+## 📄 Licenc
+
+Ez a projekt szabadon bővíthető, tanulási és fejlesztési célokra használható.
+
+---
+
+**Készítette:**  
+Zsolt Varga  
+Laravel 12 + Sanctum Senior API fejlesztő

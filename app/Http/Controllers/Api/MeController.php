@@ -23,10 +23,12 @@ class MeController extends Controller
                     'id'    => $user->id,
                     'name'  => $user->name,
                     'email' => $user->email,
+                    'is_admin' => $user->is_admin,
                 ],
                 'current_token' => $user->currentAccessToken() ? [
                     'id'          => $user->currentAccessToken()->id,
                     'name'        => $user->currentAccessToken()->name,
+                    'is_admin'        => $user->currentAccessToken()->is_admin,
                     'last_used_at'=> $user->currentAccessToken()->last_used_at,
                     'created_at'  => $user->currentAccessToken()->created_at,
                 ] : null,
