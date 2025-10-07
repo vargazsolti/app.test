@@ -1,8 +1,9 @@
-
 # 💘 Laravel 12 + Sanctum Dating API & Blade UI
 
 Ez a projekt egy **Laravel 12 + Sanctum** alapú társkereső alkalmazás backend és frontend kombinációja,  
 amely JSON API-n és Blade alapú Lightwave UI-n keresztül működik.
+
+---
 
 ## 🚀 Fő funkciók
 
@@ -19,107 +20,157 @@ amely JSON API-n és Blade alapú Lightwave UI-n keresztül működik.
 - `PUT /api/v1/dating-profiles/{id}` – Profil frissítése.
 - `DELETE /api/v1/dating-profiles/{id}` – Profil törlése.
 
-### 🧑‍💼 Admin jogosultságok
-- Az `users` táblában található `is_admin` mező alapján.
-- Az admin más felhasználók profilját is létrehozhatja, frissítheti, törölheti.
-- Admin felhasználó seeder: `AdminUserSeeder` (`admin@example.com / password`).
+---
 
-### 🧠 Adatszerkezet
-A társkereső profil adatai segédtáblában (`dating_profiles`) tárolódnak,  
-a `users` tábla csak a bejelentkezéshez szükséges adatokat tartalmazza.
+## 📸 Profilképek modul
 
-Fő mezők:
-- Becenév, magasság, testsúly, testalkat, hajszín
-- Szexuális beállítottság, családi állapot, végzettség
-- Foglalkozás, beszélt nyelvek, ország, megye, város
-- Regisztráció célja
+A `ProfileImage` modul biztosítja a profilképek kezelését, jogosultságokat és megosztásokat.
 
-### 🗃️ Seeder & Factory
-- Minden entitás rendelkezik factory-val és seederrel.
-- A seeder truncate-olja a táblákat, majd 10 mintaprofil generálódik.
+### 🧩 API végpontok
 
-### 🧩 JSON válaszstruktúra
-Minden API egységes formátumban ad vissza adatot:
+| Módszer | URL | Leírás |
+|----------|-----|--------|
+| `GET` | `/api/v1/profile-images` | Profilképek listázása (profil ID alapján is szűrhető) |
+| `POST` | `/api/v1/profile-images` | Új kép feltöltése (csak a tulajdonos vagy admin) |
+| `GET` | `/api/v1/profile-images/{id}` | Egy kép megtekintése (redaktálva, ha privát és nem jogosult) |
+| `PUT` | `/api/v1/profile-images/{id}` | Kép frissítése (caption, visibility, primary stb.) |
+| `DELETE` | `/api/v1/profile-images/{id}` | Kép törlése (csak a tulajdonos vagy admin) |
+
+### 🧱 Adatszerkezet
+
+**Táblák:**
+- `profile_images`
+  - `dating_profile_id`
+  - `path`
+  - `caption`
+  - `visibility` (`public` / `private`)
+  - `is_primary` (bool)
+  - `sort_order`
+- `profile_image_shares`
+  - `profile_image_id`
+  - `shared_with_user_id`
+
+### 🧠 Működés
+
+- Minden képhez megadható **publikus** vagy **privát** láthatóság.
+- **Privát kép** esetén:
+  - a nem jogosult felhasználó csak egy *placeholder* képet lát (`/img/locked-placeholder.png`),
+  - a válaszban `is_redacted: true` szerepel.
+- **Tulajdonos** és **admin** mindig látja az eredeti képet.
+- **Megosztás**: a tulajdonos más felhasználóknak is engedélyezheti a privát kép megtekintését.
+
+### 🧰 Megosztás API
+
+| Módszer | URL | Leírás |
+|----------|-----|--------|
+| `GET` | `/api/v1/profile-image-shares?profile_image_id=ID` | Egy kép megosztásainak listája |
+| `POST` | `/api/v1/profile-image-shares` | Megosztás létrehozása (owner vagy admin) |
+| `DELETE` | `/api/v1/profile-image-shares/{id}` | Megosztás visszavonása |
+
+**Példa:**
+```json
+POST /api/v1/profile-image-shares
+{
+  "profile_image_id": 45,
+  "shared_with_user_id": 123
+}
+```
+
+**Válasz:**
 ```json
 {
   "success": true,
-  "data": { ... },
-  "message": "Human readable üzenet."
+  "message": "Profile image shared."
 }
 ```
 
 ---
 
+## 🔒 Jogosultsági szabályok
+
+| Szerep | Megtekintés | Feltöltés | Törlés / Frissítés | Megosztás |
+|--------|--------------|------------|---------------------|------------|
+| Tulajdonos | Saját képei, privát képei | ✔️ | ✔️ | ✔️ |
+| Megosztott user | Csak megosztott privát képei | ❌ | ❌ | ❌ |
+| Más user | Csak publikus képek | ❌ | ❌ | ❌ |
+| Admin | Minden kép | ✔️ | ✔️ | ✔️ |
+
+---
+
 ## 🧭 Blade alapú Lightwave UI
 
-A projekt tartalmaz egy **minimalista Blade UI-t**, amely közvetlenül a Sanctum API-t hívja JavaScriptből.
+### 💡 Profilképek kezelése a Blade nézetben
 
-### 🔑 Auth oldalak
-- `/auth/login` → Bejelentkezés (`POST /api/v1/auth/token`)
-- `/me` → Saját profil oldal (`GET /api/v1/me`)
-- Logout gomb → `DELETE /api/v1/auth/token`
+`resources/views/profiles/show.blade.php`
 
-### 💌 Dating Profiles UI
-- `/profiles` → Profil lista (`GET /api/v1/dating-profiles`)
-- `/profiles/{id}` → Profil adatlap (`GET /api/v1/dating-profiles/{id}`)
-- `/profiles/{id}/edit` → Profil szerkesztés (`PUT /api/v1/dating-profiles/{id}`)
-- Automatikus token kezelés `localStorage` segítségével.
-
-### ⚙️ Technológia
-- Blade template engine (Laravel 12)
-- Vanilla JavaScript + fetch API
-- Lightwave layout (minimalista stílus)
-- Tailwind nélkül, könnyű és gyors UI
+Funkciók:
+- Képfeltöltés (multipart/form-data)
+- Láthatóság választó (`Publikus` / `Privát`)
+- Képek listázása, törlése, elsődleges beállítása
+- Privát képek **placeholder**-rel jelennek meg, ha a user nem jogosult
+- Tulajdonos/admin esetén „Megosztás” blokk:
+  - user ID megadása
+  - megosztás API-hívás (`POST /profile-image-shares`)
+- Privát badge (`PRIVÁT`) és redaktált (`REDAKTÁLT`) jelölés
 
 ---
 
-## 💾 Telepítés
+## 🧑‍💼 Admin jogosultságok
+
+- Az `users` táblában `is_admin` boolean flag.
+- Az admin:
+  - minden profilhoz tölthet fel képet,
+  - lát minden privát képet,
+  - kezelheti a megosztásokat is.
+
+Seeder:
+```bash
+php artisan db:seed --class=AdminUserSeeder
+# admin@example.com / password
+```
+
+---
+
+## 📸 Redaktálási logika
+
+A redaktálás minden olyan API-válaszban megtörténik, ahol `images` kapcsolat szerepel.  
+Ha a user nem jogosult a privát képre, a `url` mező a placeholderre mutat:
+
+```json
+{
+  "id": 12,
+  "visibility": "private",
+  "is_redacted": true,
+  "url": "http://localhost/img/locked-placeholder.png"
+}
+```
+
+---
+
+## 🧪 Tesztelési forgatókönyvek
+
+1️⃣ **Publikus kép** → bárki láthatja  
+2️⃣ **Privát kép (tulaj)** → látszik  
+3️⃣ **Privát kép (más user)** → placeholder  
+4️⃣ **Privát kép megosztva más userrel** → teljes kép látszik  
+5️⃣ **Admin** → mindig látja az eredeti képet  
+6️⃣ **Nem tulaj feltöltése** → 403 hiba  
+7️⃣ **Megosztás nem tulajtól** → 403 hiba  
+8️⃣ **Megosztás admin felől** → engedélyezett  
+
+---
+
+## 🧰 Hasznos artisan parancsok
 
 ```bash
-git clone https://github.com/vargazsolti/app-sanctum.test.git
-cd app-sanctum.test
-composer install
-cp .env.example .env
-php artisan key:generate
-
-# Adatbázis beállítás az .env-ben, majd migrációk futtatása
+# Migráció + seed
 php artisan migrate --seed
 
-# Admin user létrehozás
-php artisan db:seed --class=AdminUserSeeder
-
-# Fejlesztői szerver indítása
-php artisan serve
-```
-
-Alapértelmezett elérési út:
-```
-http://localhost:8000/auth/login
-```
-
----
-
-## 🧪 Postman Collection
-
-A projekt tartalmaz egy teljes Postman gyűjteményt:
-
-- **DatingProfiles_updated.postman_collection.json**  
-  Minden CRUD endpoint előre kitöltve  
-  Bearer token örökléssel (`{{token}}`), `{{base_url}}` környezeti változóval.
-
-Importáld a Postman-be, állítsd be a változókat:
-```
-base_url = http://localhost/
-token = <a saját Sanctum tokened>
-```
-
----
-
-## 🧰 Hasznos parancsok
-
-```bash
 # Cache törlés
 php artisan optimize:clear
+
+# Storage link létrehozása
+php artisan storage:link
 
 # Factory újra generálás
 php artisan db:seed --class=DatingProfileSeeder
@@ -140,4 +191,14 @@ php artisan db:seed --class=AdminUserSeeder
 
 ---
 
+## 🏁 Összefoglaló
 
+Ez a verzió már tartalmazza:
+- ✅ profilképek feltöltését (`ProfileImageController`)
+- ✅ privát/publikus képek kezelését és placeholder megjelenítést
+- ✅ képek megosztását más felhasználókkal (`ProfileImageShareController`)
+- ✅ admin bypass jogosultságot
+- ✅ tulajdonos-ellenőrzést feltöltés/frissítés/törlés során
+- ✅ teljes Lightwave UI integrációt (`profiles/show.blade.php`)
+
+---

@@ -79,25 +79,68 @@ class DatingProfileController extends Controller
         ], 201);
     }
 
-    // GET /api/v1/dating-profiles/{id}
-    public function show($id)
-    {
-        $profile = DatingProfile::with(['user:id,name,email', 'languages:id,code,name'])->find($id);
+    // GET /api/v1/dating-profiles/{id}?with=images
+// GET /api/v1/dating-profiles/{id}?with=images
+public function show(Request $request, $id)
+{
+    $with = collect(explode(',', (string) $request->query('with')))
+        ->map(fn ($v) => trim($v))
+        ->filter()
+        ->values();
 
-        if (!$profile) {
-            return response()->json([
-                'success' => false,
-                'data' => [],
-                'message' => 'Dating profile not found.',
-            ], 404);
-        }
+    // alap kapcsolatok
+    $profile = \App\Models\Api\DatingProfile::with(['user:id,name,email', 'languages:id,code,name'])
+        ->find($id);
 
+    if (!$profile) {
         return response()->json([
-            'success' => true,
-            'data' => $profile,
-            'message' => 'Dating profile retrieved successfully.',
-        ]);
+            'success' => false,
+            'data'    => [],
+            'message' => 'Dating profile not found.',
+        ], 404);
     }
+
+    // ha képeket is kérünk, töltsük be a shares-t is, hogy tudjunk redaktálni
+    if ($with->contains('images')) {
+        $profile->load([
+            'images' => function ($q) {
+                $q->orderByDesc('is_primary')
+                  ->orderBy('sort_order')
+                  ->orderByDesc('id');
+            },
+            'images.shares:profile_image_id,shared_with_user_id',
+        ]);
+
+        $viewerId    = optional($request->user())->id;
+        $ownerId     = (int) $profile->user_id;
+        $placeholder = asset('img/locked-placeholder.png');
+
+        // redaktálás: aki nem tulaj / nincs megosztva, az privát képnél placeholdert kap
+        $profile->images->transform(function ($img) use ($viewerId, $ownerId, $placeholder,$request) {
+           $isOwner  = $viewerId && ((int)$viewerId === $ownerId);
+$isShared = $img->shares->contains(fn ($s) => (int)$s->shared_with_user_id === (int)$viewerId);
+$isAdmin  = (bool) optional($request->user())->is_admin; // <-- admin bypass
+
+$visible = ($img->visibility === 'public') || $isOwner || $isShared || $isAdmin;
+            $img->is_redacted = !$visible && ($img->visibility === 'private');
+
+            if ($img->is_redacted) {
+                $img->url     = $placeholder;   // <<< itt cserélünk placeholderre
+                $img->caption = null;           // feliratot rejtsük
+            }
+
+            unset($img->shares); // nem kell a kliensnek
+            return $img;
+        });
+    }
+
+    return response()->json([
+        'success' => true,
+        'data'    => $profile,
+        'message' => 'Dating profile retrieved successfully.',
+    ]);
+}
+
 
     // PUT /api/v1/dating-profiles/{id}
     public function update(UpdateRequest $request, $id)

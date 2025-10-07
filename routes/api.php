@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\MeController;
 use App\Http\Controllers\Api\DatingProfileController;
+use App\Http\Controllers\Api\ProfileImageController;
+use App\Http\Controllers\Api\ProfileImageShareController;
 
 Route::prefix('v1')->group(function () {
 
@@ -21,7 +23,11 @@ Route::prefix('v1')->group(function () {
      
         Route::apiResource('dating-profiles', DatingProfileController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     
-    
+        Route::apiResource('profile-images', ProfileImageController::class);
+        Route::apiResource('profile-images', ProfileImageController::class);
+
+    // ÚJ: megosztások CRUD
+    Route::apiResource('profile-image-shares', ProfileImageShareController::class);
     
     
     });

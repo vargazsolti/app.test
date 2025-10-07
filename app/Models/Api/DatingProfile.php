@@ -45,4 +45,12 @@ class DatingProfile extends Model
         return $this->belongsToMany(Language::class, 'dating_profile_language')
             ->withTimestamps();
     }
+     public function images()
+    {
+        return $this->hasMany(\App\Models\Api\ProfileImage::class, 'dating_profile_id')
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderByDesc('id');
+    }
+
 }
